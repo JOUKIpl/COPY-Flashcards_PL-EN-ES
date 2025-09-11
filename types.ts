@@ -1,0 +1,26 @@
+
+export enum Language {
+  ENGLISH = 'Angielski',
+  SPANISH = 'Hiszpański',
+}
+
+export enum Level {
+  A1 = 'A1',
+  A2 = 'A2',
+  B1 = 'B1',
+  B2 = 'B2',
+  C1 = 'C1',
+  C2 = 'C2',
+}
+
+export enum View {
+  LANGUAGE_SELECTION = 'language_selection',
+  LEVEL_SELECTION = 'level_selection',
+  FLASHCARDS = 'flashcards',
+  REVIEW = 'review',
+}
+
+export interface Verb {
+  verb: string;
+  translation: string;
+}
