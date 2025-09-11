@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Verb, Language, Level, TranslationDirection } from '../types';
-import { ArrowLeftIcon } from './icons';
+import { ArrowLeftIcon, SpeakerIcon } from './icons';
+import { speak } from '../services/ttsService';
 
 interface FlashcardViewProps {
   deck: Verb[];
@@ -70,6 +71,14 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
     }
   };
 
+  const handleSpeak = (event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevents the card from flipping
+    const currentVerb = deck[currentIndex];
+    if (currentVerb) {
+      speak(currentVerb.verb, language);
+    }
+  };
+
   if (deck.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-full">
@@ -107,10 +116,20 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
             {/* Front of card */}
             <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center p-6 shadow-lg">
               <h3 className="text-4xl md:text-5xl font-bold text-white text-center">{frontText}</h3>
+              {!isPolishToForeign && (
+                <button onClick={handleSpeak} className="absolute bottom-4 right-4 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" aria-label="Odtwórz wymowę">
+                    <SpeakerIcon className="w-7 h-7" />
+                </button>
+              )}
             </div>
             {/* Back of card */}
             <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center p-6 shadow-lg transform rotate-y-180">
               <h3 className="text-4xl md:text-5xl font-bold text-white text-center">{backText}</h3>
+              {isPolishToForeign && (
+                <button onClick={handleSpeak} className="absolute bottom-4 right-4 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" aria-label="Odtwórz wymowę">
+                    <SpeakerIcon className="w-7 h-7" />
+                </button>
+              )}
             </div>
           </div>
         </div>

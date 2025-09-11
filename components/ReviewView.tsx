@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Verb, Language, TranslationDirection } from '../types';
 import * as storage from '../services/storageService';
-import { XIcon, CheckIcon, ArrowLeftIcon } from './icons';
+import { XIcon, CheckIcon, ArrowLeftIcon, SpeakerIcon } from './icons';
+import { speak } from '../services/ttsService';
 
 interface ReviewViewProps {
   reviewWords: Verb[];
@@ -81,6 +82,14 @@ const ReviewView: React.FC<ReviewViewProps> = ({ reviewWords, language, onFinish
         setIsFlipped(prev => !prev);
     }
   };
+
+  const handleSpeak = (event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevents the card from flipping
+    const currentVerb = deck[currentIndex];
+    if (currentVerb) {
+      speak(currentVerb.verb, language);
+    }
+  };
   
   const currentVerb = deck[currentIndex];
   
@@ -134,6 +143,9 @@ const ReviewView: React.FC<ReviewViewProps> = ({ reviewWords, language, onFinish
             {/* Front of card */}
             <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center p-6 shadow-lg">
               <h3 className="text-4xl md:text-5xl font-bold text-white text-center">{frontText}</h3>
+              <button onClick={handleSpeak} className="absolute bottom-4 right-4 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" aria-label="Odtwórz wymowę">
+                <SpeakerIcon className="w-7 h-7" />
+              </button>
             </div>
             {/* Back of card */}
             <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-green-600 to-green-800 rounded-2xl flex items-center justify-center p-6 shadow-lg transform rotate-y-180">
