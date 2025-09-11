@@ -18,6 +18,7 @@ export enum View {
   DIRECTION_SELECTION = 'direction_selection',
   FLASHCARDS = 'flashcards',
   REVIEW = 'review',
+  BLOCK_SUMMARY = 'block_summary',
 }
 
 export enum TranslationDirection {

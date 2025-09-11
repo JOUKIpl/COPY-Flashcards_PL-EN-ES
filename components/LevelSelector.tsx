@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Language, Level } from '../types';
 import * as storage from '../services/storageService';
-import { ArrowLeftIcon } from './icons';
+import { ArrowLeftIcon, RepeatIcon } from './icons';
 
 interface LevelSelectorProps {
   language: Language;
@@ -13,7 +13,7 @@ interface LevelSelectorProps {
 const LevelButton: React.FC<{ level: Level, onClick: () => void }> = ({ level, onClick }) => (
   <button
     onClick={onClick}
-    className="bg-gray-800 rounded-lg p-6 w-32 h-32 flex items-center justify-center text-3xl font-bold transition-transform transform hover:scale-105 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg p-6 w-32 h-32 flex items-center justify-center text-3xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-opacity-75 shadow-md"
   >
     {level}
   </button>
@@ -34,15 +34,21 @@ const LevelSelector: React.FC<LevelSelectorProps> = ({ language, onSelect, onBac
         <ArrowLeftIcon className="w-8 h-8"/>
       </button>
       <h2 className="text-3xl font-bold mb-2 text-white">Wybrany język: <span className="text-blue-400">{language}</span></h2>
-      <p className="text-xl font-light mb-10 text-gray-300">Wybierz poziom trudności lub powtórz słówka.</p>
+      <p className="text-xl font-light mb-10 text-gray-300">Wybierz poziom lub rozpocznij powtórkę.</p>
       
       {reviewCount > 0 && (
-        <div className="w-full max-w-xs mb-8">
+        <div className="w-full max-w-md mb-10 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl shadow-lg p-6 flex flex-col items-center">
+            <div className="flex items-center gap-3 text-gray-300 mb-3">
+                <RepeatIcon className="w-6 h-6"/>
+                <h3 className="text-xl font-semibold">Postępy w nauce</h3>
+            </div>
+            <p className="text-base text-gray-400">Liczba słówek do powtórzenia:</p>
+            <p className="text-6xl font-bold text-blue-400 my-2">{reviewCount}</p>
             <button
                 onClick={onStartReview}
-                className="w-full bg-green-600 text-white font-semibold rounded-lg shadow-md px-8 py-4 hover:bg-green-700 transition-colors duration-200 text-lg"
+                className="w-full bg-gradient-to-br from-green-500 to-green-700 text-white font-semibold rounded-lg shadow-md px-8 py-3 hover:from-green-600 hover:to-green-800 transition-all duration-200 text-lg transform hover:scale-105 focus:outline-none focus-visible:ring-4 focus-visible:ring-green-500 focus-visible:ring-opacity-50"
             >
-                Powtórz nieznane słówka ({reviewCount})
+                Rozpocznij powtórkę
             </button>
         </div>
       )}

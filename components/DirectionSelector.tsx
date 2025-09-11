@@ -11,7 +11,7 @@ interface DirectionSelectorProps {
 const DirectionButton: React.FC<{ text: string, subtext: string, onClick: () => void }> = ({ text, subtext, onClick }) => (
     <button
       onClick={onClick}
-      className="bg-gray-800 rounded-lg p-6 w-full md:w-80 h-32 flex flex-col items-center justify-center text-center transition-transform transform hover:scale-105 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg p-6 w-full md:w-80 h-32 flex flex-col items-center justify-center text-center transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-opacity-75 shadow-md"
     >
       <h3 className="text-2xl font-semibold text-white">{text}</h3>
       <p className="text-gray-400">{subtext}</p>
@@ -30,12 +30,12 @@ const DirectionSelector: React.FC<DirectionSelectorProps> = ({ language, onSelec
       <div className="flex flex-col md:flex-row gap-8">
         <DirectionButton
             text={`${language} → Polski`}
-            subtext="Zobaczysz słowo po obcemu, odgadujesz po polsku."
+            subtext="Zobaczysz słowo obce, odgadujesz po polsku."
             onClick={() => onSelect(TranslationDirection.FOREIGN_TO_POLISH)}
         />
         <DirectionButton
             text={`Polski → ${language}`}
-            subtext="Zobaczysz słowo po polsku, odgadujesz po obcemu."
+            subtext="Zobaczysz słowo po polsku, odgadujesz obce."
             onClick={() => onSelect(TranslationDirection.POLISH_TO_FOREIGN)}
         />
       </div>

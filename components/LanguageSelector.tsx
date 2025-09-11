@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Language } from '../types';
 import { UKFlag, SpainFlag } from './icons';
@@ -10,7 +9,7 @@ interface LanguageSelectorProps {
 const LanguageOption: React.FC<{ language: Language, flag: React.ReactNode, onClick: () => void }> = ({ language, flag, onClick }) => (
   <button
     onClick={onClick}
-    className="bg-gray-800 rounded-lg p-6 w-full md:w-64 h-48 flex flex-col items-center justify-center text-center transition-transform transform hover:scale-105 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg p-6 w-full md:w-64 h-48 flex flex-col items-center justify-center text-center transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-opacity-75 shadow-lg"
   >
     <div className="w-24 h-16 mb-4">{flag}</div>
     <h3 className="text-2xl font-semibold text-white">{language}</h3>
