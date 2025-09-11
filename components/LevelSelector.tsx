@@ -1,12 +1,13 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language, Level } from '../types';
+import * as storage from '../services/storageService';
 import { ArrowLeftIcon } from './icons';
 
 interface LevelSelectorProps {
   language: Language;
   onSelect: (level: Level) => void;
   onBack: () => void;
+  onStartReview: () => void;
 }
 
 const LevelButton: React.FC<{ level: Level, onClick: () => void }> = ({ level, onClick }) => (
@@ -18,8 +19,14 @@ const LevelButton: React.FC<{ level: Level, onClick: () => void }> = ({ level, o
   </button>
 );
 
-const LevelSelector: React.FC<LevelSelectorProps> = ({ language, onSelect, onBack }) => {
+const LevelSelector: React.FC<LevelSelectorProps> = ({ language, onSelect, onBack, onStartReview }) => {
   const levels = Object.values(Level);
+  const [reviewCount, setReviewCount] = useState<number>(0);
+
+  useEffect(() => {
+    const unknownWords = storage.getUnknownWords(language);
+    setReviewCount(unknownWords.length);
+  }, [language]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-center">
@@ -27,7 +34,19 @@ const LevelSelector: React.FC<LevelSelectorProps> = ({ language, onSelect, onBac
         <ArrowLeftIcon className="w-8 h-8"/>
       </button>
       <h2 className="text-3xl font-bold mb-2 text-white">Wybrany język: <span className="text-blue-400">{language}</span></h2>
-      <p className="text-xl font-light mb-10 text-gray-300">Wybierz poziom trudności.</p>
+      <p className="text-xl font-light mb-10 text-gray-300">Wybierz poziom trudności lub powtórz słówka.</p>
+      
+      {reviewCount > 0 && (
+        <div className="w-full max-w-xs mb-8">
+            <button
+                onClick={onStartReview}
+                className="w-full bg-green-600 text-white font-semibold rounded-lg shadow-md px-8 py-4 hover:bg-green-700 transition-colors duration-200 text-lg"
+            >
+                Powtórz nieznane słówka ({reviewCount})
+            </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
         {levels.map((level) => (
           <LevelButton key={level} level={level} onClick={() => onSelect(level)} />

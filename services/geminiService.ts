@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Language, Level, Verb } from '../types';
 
@@ -27,7 +26,7 @@ const responseSchema = {
 };
 
 export const generateVerbs = async (language: Language, level: Level): Promise<Verb[]> => {
-  const prompt = `Wygeneruj listę 50 popularnych czasowników w języku ${language} na poziomie ${level} (CEFR). Zwróć wynik jako tablicę obiektów JSON, gdzie każdy obiekt zawiera klucz "verb" z czasownikiem w języku obcym i klucz "translation" z jego polskim tłumaczeniem. Czasowniki powinny być w formie bezokolicznika.`;
+  const prompt = `Wygeneruj listę 150 popularnych czasowników w języku ${language} na poziomie ${level} (CEFR). Zwróć wynik jako tablicę obiektów JSON, gdzie każdy obiekt zawiera klucz "verb" z czasownikiem w języku obcym i klucz "translation" z jego polskim tłumaczeniem. Czasowniki powinny być w formie bezokolicznika.`;
 
   try {
     const response = await ai.models.generateContent({

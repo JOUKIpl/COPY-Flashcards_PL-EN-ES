@@ -1,4 +1,3 @@
-
 export enum Language {
   ENGLISH = 'Angielski',
   SPANISH = 'Hiszpański',
@@ -16,8 +15,14 @@ export enum Level {
 export enum View {
   LANGUAGE_SELECTION = 'language_selection',
   LEVEL_SELECTION = 'level_selection',
+  DIRECTION_SELECTION = 'direction_selection',
   FLASHCARDS = 'flashcards',
   REVIEW = 'review',
+}
+
+export enum TranslationDirection {
+  FOREIGN_TO_POLISH = 'foreign_to_polish',
+  POLISH_TO_FOREIGN = 'polish_to_foreign',
 }
 
 export interface Verb {
