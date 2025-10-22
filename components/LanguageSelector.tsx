@@ -19,7 +19,7 @@ const LanguageOption: React.FC<{ language: Language, flag: React.ReactNode, onCl
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({ onSelect }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center">
-      <h1 className="text-4xl font-bold mb-4 text-white">Witaj w nauce czasowników!</h1>
+      <h1 className="text-4xl font-bold mb-4 text-white">Witaj w nauce słówek!</h1>
       <h2 className="text-2xl font-light mb-12 text-gray-300">Wybierz język, którego chcesz się uczyć.</h2>
       <div className="flex flex-col md:flex-row gap-8">
         <LanguageOption 
