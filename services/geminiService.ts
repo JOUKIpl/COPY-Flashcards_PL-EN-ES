@@ -1,38 +1,56 @@
+import { GoogleGenAI, Type } from "@google/genai";
 import { Language, Level, Word, WordCategory } from '../types';
+
+if (!process.env.API_KEY) {
+  throw new Error("API_KEY environment variable not set");
+}
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+const responseSchema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      word: {
+        type: Type.STRING,
+        description: 'Słowo w języku obcym w formie podstawowej.'
+      },
+      translation: {
+        type: Type.STRING,
+        description: 'Polskie tłumaczenie słowa.'
+      }
+    },
+    required: ['word', 'translation']
+  }
+};
+
 
 export const generateWords = async (language: Language, level: Level, category: WordCategory): Promise<Word[]> => {
   try {
-    const response = await fetch('/.netlify/functions/generate-words', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ language, level, category }),
+    const prompt = `Wygeneruj listę 100 popularnych słów z kategorii "${category}" w języku ${language} na poziomie ${level} (CEFR). Zwróć wynik jako tablicę obiektów JSON, gdzie każdy obiekt zawiera klucz "word" ze słowem w języku obcym i klucz "translation" z jego polskim tłumaczeniem. Słowa powinny być w podstawowej formie (np. bezokolicznik dla czasowników, mianownik dla rzeczowników).`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+      },
     });
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Nieznany błąd serwera.' }));
-        throw new Error(errorData.error || `Błąd serwera: ${response.status}`);
-    }
-    
-    const parsedWords: Word[] = await response.json();
-
-    if (!Array.isArray(parsedWords)) {
-      throw new Error('Otrzymano nieprawidłową strukturę danych z serwera.');
-    }
-    
-    return parsedWords;
+    const jsonString = response.text.trim();
+    return JSON.parse(jsonString);
 
   } catch (error) {
-    console.error("Błąd podczas pobierania słów z funkcji backendu:", error);
-    // Zachowaj logikę zapasową po stronie klienta na wypadek błędu sieci lub serwera
+    console.error("Error generating words from Gemini API:", error);
     return getFallbackWords(language, level);
   }
 };
 
 
 const getFallbackWords = (language: Language, level: Level): Word[] => {
-    console.warn(`Używanie zapasowej, predefiniowanej listy słów dla ${language} ${level}`);
+    console.warn(`Using fallback predefined word list for ${language} ${level}`);
     if (language === Language.ENGLISH) {
         return [
             { word: 'be', translation: 'być' },
