@@ -25,11 +25,10 @@ const responseSchema = {
   }
 };
 
-
 export const generateWords = async (language: Language, level: Level, category: WordCategory): Promise<Word[]> => {
-  try {
-    const prompt = `Wygeneruj listę 100 popularnych słów z kategorii "${category}" w języku ${language} na poziomie ${level} (CEFR). Zwróć wynik jako tablicę obiektów JSON, gdzie każdy obiekt zawiera klucz "word" ze słowem w języku obcym i klucz "translation" z jego polskim tłumaczeniem. Słowa powinny być w podstawowej formie (np. bezokolicznik dla czasowników, mianownik dla rzeczowników).`;
+  const prompt = `Wygeneruj listę 100 popularnych słów z kategorii "${category}" w języku ${language} na poziomie ${level} (CEFR). Zwróć wynik jako tablicę obiektów JSON, gdzie każdy obiekt zawiera klucz "word" ze słowem w języku obcym i klucz "translation" z jego polskim tłumaczeniem. Słowa powinny być w podstawowej formie (np. bezokolicznik dla czasowników, mianownik dla rzeczowników).`;
 
+  try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
@@ -40,17 +39,23 @@ export const generateWords = async (language: Language, level: Level, category: 
     });
 
     const jsonString = response.text.trim();
-    return JSON.parse(jsonString);
+    const parsedWords: Word[] = JSON.parse(jsonString);
 
+    if (!Array.isArray(parsedWords) || parsedWords.some(v => typeof v.word !== 'string' || typeof v.translation !== 'string')) {
+      throw new Error('Invalid data structure received from API.');
+    }
+    
+    return parsedWords;
   } catch (error) {
-    console.error("Error generating words from Gemini API:", error);
+    console.error("Error generating words with Gemini API:", error);
+    // Fallback to a predefined list in case of API error
     return getFallbackWords(language, level);
   }
 };
 
 
 const getFallbackWords = (language: Language, level: Level): Word[] => {
-    console.warn(`Using fallback predefined word list for ${language} ${level}`);
+    console.warn(`Falling back to predefined word list for ${language} ${level}`);
     if (language === Language.ENGLISH) {
         return [
             { word: 'be', translation: 'być' },
