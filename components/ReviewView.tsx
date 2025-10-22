@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Verb, Language, TranslationDirection } from '../types';
+import { Word, Language, TranslationDirection } from '../types';
 import * as storage from '../services/storageService';
 import { XIcon, CheckIcon, ArrowLeftIcon, SpeakerIcon } from './icons';
 import { speak } from '../services/ttsService';
 
 interface ReviewViewProps {
-  reviewWords: Verb[];
+  reviewWords: Word[];
   language: Language;
   onFinish: () => void;
 }
 
 const ReviewView: React.FC<ReviewViewProps> = ({ reviewWords, language, onFinish }) => {
-  const [deck, setDeck] = useState<Verb[]>([]);
+  const [deck, setDeck] = useState<Word[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [knownInSession, setKnownInSession] = useState<Verb[]>([]);
-  const [stillUnknown, setStillUnknown] = useState<Verb[]>([]);
+  const [knownInSession, setKnownInSession] = useState<Word[]>([]);
+  const [stillUnknown, setStillUnknown] = useState<Word[]>([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [direction] = useState<TranslationDirection>(TranslationDirection.FOREIGN_TO_POLISH);
 
@@ -29,7 +29,7 @@ const ReviewView: React.FC<ReviewViewProps> = ({ reviewWords, language, onFinish
     setIsTransitioning(false);
   }, [reviewWords]);
 
-  const finishReview = (completed: boolean = false, allKnownWords: Verb[] = knownInSession) => {
+  const finishReview = (completed: boolean = false, allKnownWords: Word[] = knownInSession) => {
     storage.removeKnownWords(language, allKnownWords);
     onFinish();
   };
@@ -38,7 +38,7 @@ const ReviewView: React.FC<ReviewViewProps> = ({ reviewWords, language, onFinish
     if (isTransitioning) return;
 
     setIsTransitioning(true);
-    const currentVerb = deck[currentIndex];
+    const currentWord = deck[currentIndex];
 
     setIsFlipped(true);
     
@@ -47,10 +47,10 @@ const ReviewView: React.FC<ReviewViewProps> = ({ reviewWords, language, onFinish
       let updatedStillUnknown = stillUnknown;
 
       if (known) {
-        updatedKnownInSession = [...knownInSession, currentVerb];
+        updatedKnownInSession = [...knownInSession, currentWord];
         setKnownInSession(updatedKnownInSession);
       } else {
-        updatedStillUnknown = [...stillUnknown, currentVerb];
+        updatedStillUnknown = [...stillUnknown, currentWord];
         setStillUnknown(updatedStillUnknown);
       }
 
@@ -85,15 +85,15 @@ const ReviewView: React.FC<ReviewViewProps> = ({ reviewWords, language, onFinish
 
   const handleSpeak = (event: React.MouseEvent) => {
     event.stopPropagation(); // Prevents the card from flipping
-    const currentVerb = deck[currentIndex];
-    if (currentVerb) {
-      speak(currentVerb.verb, language);
+    const currentWord = deck[currentIndex];
+    if (currentWord) {
+      speak(currentWord.word, language);
     }
   };
   
-  const currentVerb = deck[currentIndex];
+  const currentWord = deck[currentIndex];
   
-  if (!currentVerb) {
+  if (!currentWord) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center">
             <CheckIcon className="w-16 h-16 text-green-400 mb-4" />
@@ -110,8 +110,8 @@ const ReviewView: React.FC<ReviewViewProps> = ({ reviewWords, language, onFinish
   }
 
   const isPolishToForeign = direction === TranslationDirection.POLISH_TO_FOREIGN;
-  const frontText = isPolishToForeign ? currentVerb.translation : currentVerb.verb;
-  const backText = isPolishToForeign ? currentVerb.verb : currentVerb.translation;
+  const frontText = isPolishToForeign ? currentWord.translation : currentWord.word;
+  const backText = isPolishToForeign ? currentWord.word : currentWord.translation;
 
   const totalWordsInPass = deck.length;
   const wordsRemainingInPass = totalWordsInPass - currentIndex;

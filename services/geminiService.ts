@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Language, Level, Verb } from '../types';
+import { Language, Level, Word, WordCategory } from '../types';
 
 if (!process.env.API_KEY) {
   throw new Error("API_KEY environment variable not set");
@@ -12,21 +12,21 @@ const responseSchema = {
   items: {
     type: Type.OBJECT,
     properties: {
-      verb: {
+      word: {
         type: Type.STRING,
-        description: 'Czasownik w języku obcym w formie bezokolicznika.'
+        description: 'Słowo w języku obcym w formie podstawowej.'
       },
       translation: {
         type: Type.STRING,
-        description: 'Polskie tłumaczenie czasownika.'
+        description: 'Polskie tłumaczenie słowa.'
       }
     },
-    required: ['verb', 'translation']
+    required: ['word', 'translation']
   }
 };
 
-export const generateVerbs = async (language: Language, level: Level): Promise<Verb[]> => {
-  const prompt = `Wygeneruj listę 150 popularnych czasowników w języku ${language} na poziomie ${level} (CEFR). Zwróć wynik jako tablicę obiektów JSON, gdzie każdy obiekt zawiera klucz "verb" z czasownikiem w języku obcym i klucz "translation" z jego polskim tłumaczeniem. Czasowniki powinny być w formie bezokolicznika.`;
+export const generateWords = async (language: Language, level: Level, category: WordCategory): Promise<Word[]> => {
+  const prompt = `Wygeneruj listę 100 popularnych słów z kategorii "${category}" w języku ${language} na poziomie ${level} (CEFR). Zwróć wynik jako tablicę obiektów JSON, gdzie każdy obiekt zawiera klucz "word" ze słowem w języku obcym i klucz "translation" z jego polskim tłumaczeniem. Słowa powinny być w podstawowej formie (np. bezokolicznik dla czasowników, mianownik dla rzeczowników).`;
 
   try {
     const response = await ai.models.generateContent({
@@ -39,39 +39,39 @@ export const generateVerbs = async (language: Language, level: Level): Promise<V
     });
 
     const jsonString = response.text.trim();
-    const parsedVerbs: Verb[] = JSON.parse(jsonString);
+    const parsedWords: Word[] = JSON.parse(jsonString);
 
-    if (!Array.isArray(parsedVerbs) || parsedVerbs.some(v => typeof v.verb !== 'string' || typeof v.translation !== 'string')) {
+    if (!Array.isArray(parsedWords) || parsedWords.some(v => typeof v.word !== 'string' || typeof v.translation !== 'string')) {
       throw new Error('Invalid data structure received from API.');
     }
     
-    return parsedVerbs;
+    return parsedWords;
   } catch (error) {
-    console.error("Error generating verbs with Gemini API:", error);
+    console.error("Error generating words with Gemini API:", error);
     // Fallback to a predefined list in case of API error
-    return getFallbackVerbs(language, level);
+    return getFallbackWords(language, level);
   }
 };
 
 
-const getFallbackVerbs = (language: Language, level: Level): Verb[] => {
-    console.warn(`Falling back to predefined verb list for ${language} ${level}`);
+const getFallbackWords = (language: Language, level: Level): Word[] => {
+    console.warn(`Falling back to predefined word list for ${language} ${level}`);
     if (language === Language.ENGLISH) {
         return [
-            { verb: 'be', translation: 'być' },
-            { verb: 'have', translation: 'mieć' },
-            { verb: 'do', translation: 'robić' },
-            { verb: 'say', translation: 'powiedzieć' },
-            { verb: 'go', translation: 'iść' },
+            { word: 'be', translation: 'być' },
+            { word: 'have', translation: 'mieć' },
+            { word: 'do', translation: 'robić' },
+            { word: 'say', translation: 'powiedzieć' },
+            { word: 'go', translation: 'iść' },
         ];
     }
     if (language === Language.SPANISH) {
         return [
-            { verb: 'ser', translation: 'być' },
-            { verb: 'tener', translation: 'mieć' },
-            { verb: 'hacer', translation: 'robić' },
-            { verb: 'decir', translation: 'powiedzieć' },
-            { verb: 'ir', translation: 'iść' },
+            { word: 'ser', translation: 'być' },
+            { word: 'tener', translation: 'mieć' },
+            { word: 'hacer', translation: 'robić' },
+            { word: 'decir', translation: 'powiedzieć' },
+            { word: 'ir', translation: 'iść' },
         ];
     }
     return [];

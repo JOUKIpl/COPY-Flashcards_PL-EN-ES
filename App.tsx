@@ -5,8 +5,10 @@ import DirectionSelector from './components/DirectionSelector';
 import FlashcardView from './components/FlashcardView';
 import ReviewView from './components/ReviewView';
 import LoadingSpinner from './components/LoadingSpinner';
-import { Language, Level, View, TranslationDirection, Verb } from './types';
-import { generateVerbs } from './services/geminiService';
+import CategorySelector from './components/CategorySelector';
+import CustomWordsView from './components/CustomWordsView';
+import { Language, Level, View, TranslationDirection, Word, WordCategory } from './types';
+import { generateWords } from './services/geminiService';
 import * as storage from './services/storageService';
 import { CheckIcon } from './components/icons';
 
@@ -16,10 +18,11 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>(View.LANGUAGE_SELECTION);
   const [language, setLanguage] = useState<Language | null>(null);
   const [level, setLevel] = useState<Level | null>(null);
+  const [category, setCategory] = useState<WordCategory | null>(null);
   const [direction, setDirection] = useState<TranslationDirection | null>(null);
-  const [fullDeck, setFullDeck] = useState<Verb[]>([]);
+  const [fullWordList, setFullWordList] = useState<Word[]>([]);
   const [blockIndex, setBlockIndex] = useState<number>(0);
-  const [reviewVerbs, setReviewVerbs] = useState<Verb[]>([]);
+  const [reviewWords, setReviewWords] = useState<Word[]>([]);
   const [blockSummary, setBlockSummary] = useState<{ known: number, unknown: number } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,24 +34,36 @@ const App: React.FC = () => {
 
   const handleLevelSelect = (selectedLevel: Level) => {
     setLevel(selectedLevel);
+    setView(View.CATEGORY_SELECTION);
+  };
+  
+  const handleCategorySelect = (selectedCategory: WordCategory) => {
+    setCategory(selectedCategory);
     setView(View.DIRECTION_SELECTION);
   };
 
   const handleDirectionSelect = async (selectedDirection: TranslationDirection) => {
-    if (!language || !level) return;
+    if (!language || !level || !category) return;
 
     setDirection(selectedDirection);
+
+    // If it's a custom session, words are already loaded. Skip API call.
+    if (level === Level.CUSTOM) {
+      setView(View.FLASHCARDS);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
-    setFullDeck([]);
+    setFullWordList([]);
     setBlockIndex(0);
 
     try {
-      const generatedVerbs = await generateVerbs(language, level);
-      if (generatedVerbs.length === 0) {
-        throw new Error("API nie zwróciło żadnych czasowników.");
+      const generatedWords = await generateWords(language, level, category);
+      if (generatedWords.length === 0) {
+        throw new Error("API nie zwróciło żadnych słów.");
       }
-      setFullDeck(generatedVerbs);
+      setFullWordList(generatedWords);
       setView(View.FLASHCARDS);
     } catch (err) {
       console.error(err);
@@ -62,32 +77,62 @@ const App: React.FC = () => {
     if (!language) return;
     const wordsToReview = storage.getUnknownWords(language);
     if (wordsToReview.length > 0) {
-      setReviewVerbs(wordsToReview);
+      setReviewWords(wordsToReview);
       setView(View.REVIEW);
     } else {
       alert("Brak słówek do powtórzenia!");
     }
   };
 
+  const handleCustomSelect = () => {
+    setView(View.CUSTOM_WORDS_MANAGEMENT);
+  };
+
+  const handleStartCustomSession = () => {
+    if (!language) return;
+    const customWords = storage.getCustomWords(language);
+    if (customWords.length === 0) {
+      alert("Brak własnych fiszek do nauki!");
+      return;
+    }
+    setFullWordList(customWords);
+    setLevel(Level.CUSTOM);
+    setCategory(WordCategory.CUSTOM);
+    setBlockIndex(0);
+    setBlockSummary(null);
+    setView(View.DIRECTION_SELECTION);
+  };
+
   const resetToLanguageSelection = useCallback(() => {
     setView(View.LANGUAGE_SELECTION);
     setLanguage(null);
     setLevel(null);
+    setCategory(null);
     setDirection(null);
-    setFullDeck([]);
-    setReviewVerbs([]);
+    setFullWordList([]);
+    setReviewWords([]);
   }, []);
 
   const backToLevelSelection = useCallback(() => {
     setView(View.LEVEL_SELECTION);
     setLevel(null);
+    setCategory(null);
     setDirection(null);
-    setFullDeck([]);
+    setFullWordList([]);
+    setError(null);
+    setBlockSummary(null);
+  }, []);
+  
+  const backToCategorySelection = useCallback(() => {
+    setView(View.CATEGORY_SELECTION);
+    setCategory(null);
+    setDirection(null);
+    setFullWordList([]);
     setError(null);
     setBlockSummary(null);
   }, []);
 
-  const handleBlockComplete = (unknownWordsFromBlock: Verb[]) => {
+  const handleBlockComplete = (unknownWordsFromBlock: Word[]) => {
     if (language) {
       storage.addUnknownWords(language, unknownWordsFromBlock);
     }
@@ -103,8 +148,18 @@ const App: React.FC = () => {
   };
   
   const currentDeck = useMemo(() => {
-    return fullDeck.slice(blockIndex * BLOCK_SIZE, (blockIndex + 1) * BLOCK_SIZE);
-  }, [fullDeck, blockIndex]);
+    if (level === Level.CUSTOM) {
+      return fullWordList; // For custom words, the deck is the entire list
+    }
+    return fullWordList.slice(blockIndex * BLOCK_SIZE, (blockIndex + 1) * BLOCK_SIZE);
+  }, [fullWordList, blockIndex, level]);
+
+  const getSessionTitle = () => {
+    if (level === Level.CUSTOM) {
+      return "Własne fiszki";
+    }
+    return `Blok ${blockIndex + 1} / ${Math.ceil(fullWordList.length / BLOCK_SIZE)}`;
+  }
 
   const renderContent = () => {
     if (isLoading) {
@@ -139,33 +194,45 @@ const App: React.FC = () => {
             onSelect={handleLevelSelect}
             onBack={resetToLanguageSelection}
             onStartReview={handleStartReview}
+            onSelectCustom={handleCustomSelect}
+          />
+        );
+      case View.CATEGORY_SELECTION:
+        if (!language || !level) return null;
+        return (
+          <CategorySelector
+            language={language}
+            level={level}
+            onSelect={handleCategorySelect}
+            onBack={backToLevelSelection}
           />
         );
       case View.DIRECTION_SELECTION:
-        if (!language) return null;
+        if (!language || !level || !category) return null;
         return (
           <DirectionSelector
             language={language}
             onSelect={handleDirectionSelect}
-            onBack={backToLevelSelection}
+            onBack={backToCategorySelection}
           />
         );
       case View.FLASHCARDS:
-        if (!language || !level || !direction || currentDeck.length === 0) return null;
+        if (!language || !level || !direction || !category || currentDeck.length === 0) return null;
         return (
           <FlashcardView
             deck={currentDeck}
             language={language}
             level={level}
+            category={category}
             direction={direction}
             onBlockComplete={handleBlockComplete}
             onSessionInterrupt={backToLevelSelection}
-            sessionTitle={`Blok ${blockIndex + 1} / ${Math.ceil(fullDeck.length / BLOCK_SIZE)}`}
+            sessionTitle={getSessionTitle()}
           />
         );
       case View.BLOCK_SUMMARY:
         if (!blockSummary) return null;
-        const hasMoreBlocks = (blockIndex + 1) * BLOCK_SIZE < fullDeck.length;
+        const hasMoreBlocks = (blockIndex + 1) * BLOCK_SIZE < fullWordList.length;
         return (
            <div className="flex flex-col items-center justify-center h-full text-center">
             <CheckIcon className="w-16 h-16 text-green-400 mb-4" />
@@ -193,10 +260,19 @@ const App: React.FC = () => {
         if (!language) return null;
         return (
             <ReviewView 
-                reviewWords={reviewVerbs}
+                reviewWords={reviewWords}
                 language={language}
                 onFinish={backToLevelSelection}
             />
+        );
+      case View.CUSTOM_WORDS_MANAGEMENT:
+        if (!language) return null;
+        return (
+          <CustomWordsView
+            language={language}
+            onBack={backToLevelSelection}
+            onStart={handleStartCustomSession}
+          />
         );
       default:
         return <LanguageSelector onSelect={handleLanguageSelect} />;

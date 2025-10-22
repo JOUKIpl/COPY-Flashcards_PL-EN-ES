@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Verb, Language, Level, TranslationDirection } from '../types';
-import { ArrowLeftIcon, SpeakerIcon } from './icons';
+import { Word, Language, Level, TranslationDirection, WordCategory } from '../types';
+import { ArrowLeftIcon, SpeakerIcon, CheckIcon } from './icons';
 import { speak } from '../services/ttsService';
 
 interface FlashcardViewProps {
-  deck: Verb[];
+  deck: Word[];
   language: Language;
   level: Level;
+  category: WordCategory;
   direction: TranslationDirection;
-  onBlockComplete: (unknownWords: Verb[]) => void;
+  onBlockComplete: (unknownWords: Word[]) => void;
   onSessionInterrupt: () => void;
   sessionTitle: string;
 }
@@ -17,6 +18,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
   deck,
   language,
   level,
+  category,
   direction,
   onBlockComplete,
   onSessionInterrupt,
@@ -24,8 +26,9 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [unknownWords, setUnknownWords] = useState<Verb[]>([]);
+  const [unknownWords, setUnknownWords] = useState<Word[]>([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [sessionFinished, setSessionFinished] = useState(false);
   
   useEffect(() => {
     // Reset state when deck changes
@@ -33,17 +36,18 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
     setIsFlipped(false);
     setUnknownWords([]);
     setIsTransitioning(false);
+    setSessionFinished(false);
   }, [deck]);
 
   const handleAnswer = useCallback((known: boolean) => {
     if (isTransitioning) return;
 
     setIsTransitioning(true);
-    const currentVerb = deck[currentIndex];
+    const currentWord = deck[currentIndex];
     
     let updatedUnknownWords = unknownWords;
     if (!known) {
-      updatedUnknownWords = [...unknownWords, currentVerb];
+      updatedUnknownWords = [...unknownWords, currentWord];
       setUnknownWords(updatedUnknownWords);
     }
     
@@ -55,7 +59,11 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
       setTimeout(() => {
         const isLastCard = currentIndex === deck.length - 1;
         if (isLastCard) {
-          onBlockComplete(updatedUnknownWords);
+            if (level === Level.CUSTOM) {
+                setSessionFinished(true);
+            } else {
+                onBlockComplete(updatedUnknownWords);
+            }
         } else {
           setCurrentIndex(prev => prev + 1);
           setIsTransitioning(false);
@@ -63,7 +71,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
       }, 500); // Duration of flip back animation
     }, 1500); // Time to see the translation
 
-  }, [currentIndex, deck, unknownWords, onBlockComplete, isTransitioning]);
+  }, [currentIndex, deck, unknownWords, onBlockComplete, isTransitioning, level]);
 
   const handleManualFlip = () => {
     if (!isTransitioning) {
@@ -73,11 +81,29 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
 
   const handleSpeak = (event: React.MouseEvent) => {
     event.stopPropagation(); // Prevents the card from flipping
-    const currentVerb = deck[currentIndex];
-    if (currentVerb) {
-      speak(currentVerb.verb, language);
+    const currentWord = deck[currentIndex];
+    if (currentWord) {
+      speak(currentWord.word, language);
     }
   };
+
+  if (sessionFinished && level === Level.CUSTOM) {
+    const knownCount = deck.length - unknownWords.length;
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center">
+            <CheckIcon className="w-16 h-16 text-green-400 mb-4" />
+            <h2 className="text-3xl font-bold mb-2 text-white">Sesja ukończona!</h2>
+            <p className="text-xl text-gray-300">Znasz: {knownCount} / {deck.length}</p>
+            <p className="text-xl mb-8 text-gray-300">Nie znasz: {unknownWords.length} / {deck.length}</p>
+            <button
+                onClick={onSessionInterrupt}
+                className="bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105"
+            >
+                Powrót do menu
+            </button>
+        </div>
+    );
+  }
 
   if (deck.length === 0) {
     return (
@@ -87,10 +113,10 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
     );
   }
 
-  const currentVerb = deck[currentIndex];
+  const currentWord = deck[currentIndex];
   const isPolishToForeign = direction === TranslationDirection.POLISH_TO_FOREIGN;
-  const frontText = isPolishToForeign ? currentVerb.translation : currentVerb.verb;
-  const backText = isPolishToForeign ? currentVerb.verb : currentVerb.translation;
+  const frontText = isPolishToForeign ? currentWord.translation : currentWord.word;
+  const backText = isPolishToForeign ? currentWord.word : currentWord.translation;
 
   return (
     <div className="flex flex-col items-center justify-between h-full p-4 relative">
@@ -100,7 +126,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({
         </button>
         <div className="text-center">
             <h2 className="text-xl font-bold text-white">{sessionTitle}</h2>
-            <p className="text-sm">{language} - {level}</p>
+            <p className="text-sm">{language} - {level === Level.CUSTOM ? "Własne" : `${level} - ${category}`}</p>
         </div>
         <div className="w-8"></div>
       </div>
